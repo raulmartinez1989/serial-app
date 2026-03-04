@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Initialize SQLite database
-const db = new Database('/data/serials.db');
+const db = new Database('./serials.db');
 
 // Enable WAL mode for better concurrent read performance
 db.pragma('journal_mode = WAL');
