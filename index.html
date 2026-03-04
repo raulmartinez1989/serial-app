@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SerialGen — Generador de Números de Serie</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0c10;
+      --surface: #111318;
+      --border: #1e2330;
+      --accent: #00e5ff;
+      --accent2: #ff6b35;
+      --success: #00ff88;
+      --text: #c8d0e0;
+      --muted: #4a5568;
+      --mono: 'Share Tech Mono', monospace;
+      --sans: 'Barlow', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo-title {
+      font-family: var(--mono);
+      font-size: 1.6rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 20px rgba(0,229,255,0.4);
+    }
+
+    .logo-sub {
+      font-size: 0.75rem;
+      font-weight: 300;
+      color: var(--muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .status-dot {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--success);
+      font-family: var(--mono);
+    }
+
+    .status-dot::before {
+      content: '';
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Info strip */
+    .info-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-card label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .info-card .val {
+      font-family: var(--mono);
+      font-size: 1.4rem;
+      color: var(--accent);
+    }
+
+    /* Main generator panel */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .panel-title {
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .generator-layout {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1.5rem;
+      align-items: end;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .select-wrap {
+      position: relative;
+    }
+
+    select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 1rem;
+      padding: 0.75rem 2.5rem 0.75rem 1rem;
+      appearance: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0,229,255,0.1);
+    }
+
+    .select-arrow {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .btn-generate {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.75rem 2rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-generate:hover {
+      background: #33eeff;
+      box-shadow: 0 0 20px rgba(0,229,255,0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-generate:active {
+      transform: translateY(0);
+    }
+
+    .btn-generate:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Serial display */
+    .serial-display {
+      margin-top: 2rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      display: none;
+    }
+
+    .serial-display.visible {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .serial-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .serial-number {
+      font-family: var(--mono);
+      font-size: 2.5rem;
+      letter-spacing: 0.12em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .seg { color: var(--muted); }
+    .seg.yy { color: #ff9f43; }
+    .seg.ww { color: #54a0ff; }
+    .seg.ll { color: var(--accent2); }
+    .seg.nn { color: var(--success); text-shadow: 0 0 12px rgba(0,255,136,0.4); }
+
+    .serial-breakdown {
+      display: flex;
+      gap: 1.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .breakdown-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .breakdown-item .bk-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .breakdown-item .bk-val {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 0.7rem;
+      font-family: var(--mono);
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 0.5rem;
+    }
+
+    .copy-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* History table */
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .filter-select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      padding: 0.4rem 0.75rem;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 0.6rem 1rem;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid rgba(30,35,48,0.5);
+      color: var(--text);
+    }
+
+    tr:hover td { background: rgba(0,229,255,0.03); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      background: rgba(0,229,255,0.08);
+      color: var(--accent);
+      border: 1px solid rgba(0,229,255,0.2);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .info-strip { grid-template-columns: repeat(3, 1fr); }
+      .generator-layout { grid-template-columns: 1fr; }
+      .serial-number { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <span class="logo-title">SERIAL<span style="color:#ff6b35">GEN</span></span>
+      <span class="logo-sub">Sistema de numeración de manufactura</span>
+    </div>
+    <div class="status-dot">SISTEMA ACTIVO</div>
+  </header>
+
+  <div class="info-strip">
+    <div class="info-card">
+      <label>Año (YY)</label>
+      <span class="val" id="stat-yy">--</span>
+    </div>
+    <div class="info-card">
+      <label>Semana (WW)</label>
+      <span class="val" id="stat-ww">--</span>
+    </div>
+    <div class="info-card">
+      <label>Seriales generados hoy</label>
+      <span class="val" id="stat-total">--</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">⬡ Generar número de serie</div>
+    <div class="generator-layout">
+      <div class="field">
+        <label>Línea de manufactura (LL)</label>
+        <div class="select-wrap">
+          <select id="line-select">
+            <option value="">— Seleccionar línea —</option>
+            <option value="01">Línea 01</option>
+            <option value="02">Línea 02</option>
+            <option value="03">Línea 03</option>
+            <option value="04">Línea 04</option>
+            <option value="05">Línea 05</option>
+          </select>
+          <span class="select-arrow">▾</span>
+        </div>
+      </div>
+      <button class="btn-generate" id="btn-gen" onclick="generateSerial()">
+        GENERAR →
+      </button>
+    </div>
+
+    <div class="serial-display" id="serial-display">
+      <div class="serial-label">Número de serie generado</div>
+      <div class="serial-number" id="serial-output"></div>
+      <div class="serial-breakdown" id="breakdown"></div>
+      <button class="copy-btn" onclick="copySerial()">⎘ COPIAR</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="history-header">
+      <div class="panel-title" style="margin:0">⬡ Historial de seriales</div>
+      <div class="filter-row">
+        <select class="filter-select" id="filter-line" onchange="loadHistory()">
+          <option value="">Todas las líneas</option>
+          <option value="01">Línea 01</option>
+          <option value="02">Línea 02</option>
+          <option value="03">Línea 03</option>
+          <option value="04">Línea 04</option>
+          <option value="05">Línea 05</option>
+        </select>
+      </div>
+    </div>
+    <div id="history-table"></div>
+  </div>
+</div>
+
+<script>
+  let lastSerial = '';
+
+  async function loadStats() {
+    try {
+      const r = await fetch('/api/stats');
+      const d = await r.json();
+      document.getElementById('stat-yy').textContent = d.currentYear;
+      document.getElementById('stat-ww').textContent = d.currentWeek;
+      document.getElementById('stat-total').textContent = d.totalGenerated.toLocaleString();
+    } catch(e) {}
+  }
+
+  async function generateSerial() {
+    const line = document.getElementById('line-select').value;
+    if (!line) { alert('Por favor selecciona una línea de manufactura.'); return; }
+
+    const btn = document.getElementById('btn-gen');
+    btn.disabled = true;
+    btn.textContent = 'GENERANDO...';
+
+    try {
+      const r = await fetch('/api/serial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ line })
+      });
+      const d = await r.json();
+
+      if (!d.success) { alert(d.error); return; }
+
+      lastSerial = d.serial;
+      const { yy, ww, ll, counter } = d;
+      const nn = String(counter).padStart(6, '0');
+
+      document.getElementById('serial-output').innerHTML =
+        `<span class="seg yy">${yy}</span>` +
+        `<span class="seg ww">${ww}</span>` +
+        `<span class="seg ll">${ll}</span>` +
+        `<span class="seg nn">${nn}</span>`;
+
+      document.getElementById('breakdown').innerHTML = `
+        <div class="breakdown-item"><span class="bk-label">Año</span><span class="bk-val" style="color:#ff9f43">${yy}</span></div>
+        <div class="breakdown-item"><span class="bk-label">Semana</span><span class="bk-val" style="color:#54a0ff">${ww}</span></div>
+        <div class="breakdown-item"><span class="bk-label">Línea</span><span class="bk-val" style="color:#ff6b35">${ll}</span></div>
+        <div class="breakdown-item"><span class="bk-label">Secuencia</span><span class="bk-val" style="color:#00ff88">${nn}</span></div>
+      `;
+
+      document.getElementById('serial-display').classList.add('visible');
+      await loadStats();
+      await loadHistory();
+    } catch(e) {
+      alert('Error de conexión con el servidor.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'GENERAR →';
+    }
+  }
+
+  function copySerial() {
+    if (!lastSerial) return;
+    navigator.clipboard.writeText(lastSerial).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = '✓ COPIADO';
+      setTimeout(() => btn.textContent = '⎘ COPIAR', 2000);
+    });
+  }
+
+  async function loadHistory() {
+    const line = document.getElementById('filter-line').value;
+    const url = '/api/serials?limit=20' + (line ? `&line=${line}` : '');
+    const container = document.getElementById('history-table');
+
+    try {
+      const r = await fetch(url);
+      const rows = await r.json();
+
+      if (!rows.length) {
+        container.innerHTML = '<div class="empty-state">No hay seriales generados aún.</div>';
+        return;
+      }
+
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Número de Serie</th>
+              <th>Línea</th>
+              <th>Semana</th>
+              <th>Secuencia</th>
+              <th>Fecha/Hora</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map((row, i) => `
+              <tr>
+                <td style="color:var(--muted)">${i+1}</td>
+                <td style="color:var(--success);font-size:1rem;letter-spacing:0.1em">${row.serial}</td>
+                <td><span class="badge">L${row.line}</span></td>
+                <td>${row.week}</td>
+                <td>${String(row.counter).padStart(6,'0')}</td>
+                <td style="color:var(--muted);font-size:0.78rem">${row.created_at}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    } catch(e) {}
+  }
+
+  // Init
+  loadStats();
+  loadHistory();
+  setInterval(loadStats, 10000);
+</script>
+</body>
+</html>
