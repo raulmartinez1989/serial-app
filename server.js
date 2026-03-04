@@ -74,7 +74,7 @@ const generateSerial = db.transaction((line) => {
     VALUES (?, ?, ?, ?, ?)
   `).run(serial, year, week, line, counter);
 
-  return { serial, yy, ww, line, counter };
+  return { serial, yy, ww, ll:line, counter };
 });
 
 app.use(express.json());
