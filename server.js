@@ -133,8 +133,14 @@ app.listen(PORT, () => {
 });
 // Endpoint temporal para descargar la base de datos 
 app.get('/api/download-db', (req, res) => {
-    const data = db.export();
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', 'attachment; filename=serials.db');
-    res.send(Buffer.from(data));
+    try {
+        const data = db.export();
+        res.setHeader('Content-Type', 'application/octet-stream');
+        res.setHeader('Content-Disposition', 'attachment; filename=serials.db');
+        res.send(Buffer.from(data));
+    } catch (err) {
+        console.error('Error exportando DB:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
+
