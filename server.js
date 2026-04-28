@@ -131,3 +131,10 @@ app.get('/api/stats', (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
 });
+// Endpoint temporal para descargar la base de datos 
+app.get('/api/download-db', (req, res) => {
+    const data = db.export();
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', 'attachment; filename=serials.db');
+    res.send(Buffer.from(data));
+});
